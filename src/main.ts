@@ -1,6 +1,6 @@
 import "./style.css";
 import "prosemirror-view/style/prosemirror.css";
-import { mountEditor } from "./editor/editor";
+import * as Editor from "./editor/editor";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("#app not found");
@@ -9,6 +9,8 @@ app.innerHTML = `
   <div class="layout">
     <header class="menubar">
       <div class="menu">File</div>
+      <div class="menu" id="edit-undo">Undo</div>
+      <div class="menu" id="edit-redo">Redo</div>
       <div class="menu">Edit</div>
       <div class="menu">View</div>
       <div class="menu">Preferences</div>
@@ -30,5 +32,16 @@ app.innerHTML = `
 const editor = document.querySelector<HTMLDivElement>("#editor");
 if (!editor) throw new Error("#editor not found");
 
-const view = mountEditor(editor);
+const view = Editor.mountEditor(editor);
 view.focus();
+
+document.querySelector("#edit-undo")?.addEventListener("click", () => {
+  Editor.doUndo(view);
+  view.focus();
+});
+
+document.querySelector("#edit-redo")?.addEventListener("click", () => {
+  Editor.doRedo(view);
+  view.focus();
+});
+
