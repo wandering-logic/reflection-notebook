@@ -1,4 +1,6 @@
 import "./style.css";
+import "prosemirror-view/style/prosemirror.css";
+import { mountEditor } from "./editor/editor";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("#app not found");
@@ -27,4 +29,6 @@ app.innerHTML = `
 
 const editor = document.querySelector<HTMLDivElement>("#editor");
 if (!editor) throw new Error("#editor not found");
-editor.textContent = "ProseMirror will mount here.";
+
+const view = mountEditor(editor);
+view.focus();
