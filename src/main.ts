@@ -44,4 +44,3 @@ document.querySelector("#edit-redo")?.addEventListener("click", () => {
   Editor.doRedo(view);
   view.focus();
 });
-
