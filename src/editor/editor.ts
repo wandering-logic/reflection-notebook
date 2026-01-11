@@ -1,14 +1,19 @@
-import { baseKeymap } from "prosemirror-commands";
+import { baseKeymap, toggleMark } from "prosemirror-commands";
 import { history, redo, undo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { schema } from "prosemirror-schema-basic";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 
+const markKeymap = keymap({
+  "Mod-b": toggleMark(schema.marks.strong),
+  "Mod-i": toggleMark(schema.marks.em),
+});
+
 export function mountEditor(host: HTMLElement): EditorView {
   const state = EditorState.create({
     schema,
-    plugins: [history(), keymap(baseKeymap)],
+    plugins: [history(), markKeymap, keymap(baseKeymap)],
   });
 
   const view = new EditorView(host, { state });
