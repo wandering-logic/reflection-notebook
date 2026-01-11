@@ -107,3 +107,9 @@ body {
 .ProseMirror {
   outline: none;
 }
+.ProseMirror blockquote {
+  margin: 0.5em 0;
+  padding-left: 1em;
+  border-left: 3px solid #ccc;
+  color: #555;
+}

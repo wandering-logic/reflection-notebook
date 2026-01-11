@@ -1,23 +1,55 @@
-import { baseKeymap, setBlockType, toggleMark } from "prosemirror-commands";
+import {
+  baseKeymap,
+  setBlockType,
+  toggleMark,
+  wrapIn,
+} from "prosemirror-commands";
 import { history, redo, undo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
-import { schema } from "prosemirror-schema-basic";
+import { Node } from "prosemirror-model";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
+import { schema } from "./schema";
 
 const markKeymap = keymap({
   "Mod-b": toggleMark(schema.marks.strong),
   "Mod-i": toggleMark(schema.marks.em),
 });
 
-export function mountEditor(host: HTMLElement): EditorView {
-  const state = EditorState.create({
-    schema,
-    plugins: [history(), markKeymap, keymap(baseKeymap)],
-  });
+const plugins = [history(), markKeymap, keymap(baseKeymap)];
 
-  const view = new EditorView(host, { state });
+// Change listeners per view
+const changeListeners = new WeakMap<EditorView, () => void>();
+
+export function mountEditor(host: HTMLElement): EditorView {
+  const state = EditorState.create({ schema, plugins });
+
+  const view = new EditorView(host, {
+    state,
+    dispatchTransaction(tr) {
+      const newState = view.state.apply(tr);
+      view.updateState(newState);
+
+      if (tr.docChanged) {
+        const listener = changeListeners.get(view);
+        if (listener) listener();
+      }
+    },
+  });
   return view;
+}
+
+export function setContent(view: EditorView, content: unknown): void {
+  const doc = content
+    ? Node.fromJSON(schema, content)
+    : schema.topNodeType.createAndFill();
+  if (!doc) throw new Error("Failed to create empty document");
+  const state = EditorState.create({ schema, plugins, doc });
+  view.updateState(state);
+}
+
+export function onChange(view: EditorView, callback: () => void): void {
+  changeListeners.set(view, callback);
 }
 
 export function doUndo(view: EditorView): boolean {
@@ -45,9 +77,7 @@ export function setCodeBlock(view: EditorView): boolean {
 }
 
 export function setBlockquote(view: EditorView): boolean {
-  // Blockquote wraps other blocks, so we need wrapIn instead of setBlockType
-  // For now, this is a simplified version
-  return setBlockType(schema.nodes.paragraph)(view.state, view.dispatch);
+  return wrapIn(schema.nodes.blockquote)(view.state, view.dispatch);
 }
 
 export function insertHorizontalRule(view: EditorView): boolean {
