@@ -9,25 +9,36 @@ export const schema = new Schema({
     title: {
       content: "inline*",
       marks: "",
-      parseDOM: [{ tag: "h1.doc-title" }],
+      parseDOM: [{ tag: "h1" }],
       toDOM() {
-        return ["h1", { class: "doc-title" }, 0];
+        return ["h1", 0];
       },
     },
     subtitle: {
       content: "inline*",
       marks: "em",
-      parseDOM: [{ tag: "p.doc-subtitle" }],
+      parseDOM: [{ tag: "h2" }],
       toDOM() {
-        return ["p", { class: "doc-subtitle" }, 0];
+        return ["h2", 0];
+      },
+    },
+    // Section headings: level 1=Section (h3), 2=Subsection (h4), 3=Subsubsection (h5)
+    section: {
+      attrs: { level: { default: 1, validate: "number" } },
+      content: "inline*",
+      group: "block",
+      defining: true,
+      parseDOM: [
+        { tag: "h3", attrs: { level: 1 } },
+        { tag: "h4", attrs: { level: 2 } },
+        { tag: "h5", attrs: { level: 3 } },
+      ],
+      toDOM(node) {
+        return [`h${node.attrs.level + 2}`, 0];
       },
     },
     paragraph: {
       ...nodes.paragraph,
-      group: "block",
-    },
-    heading: {
-      ...nodes.heading,
       group: "block",
     },
     code_block: {

@@ -45,23 +45,16 @@ app.innerHTML = `
             </div>
           </div>
           <div class="menu-item has-submenu">
-            Paragraph
+            Block
             <div class="submenu">
-              <div class="menu-item" id="format-paragraph">Normal Text</div>
+              <div class="menu-item" id="format-paragraph">Paragraph</div>
+              <div class="menu-item" id="format-section">Section</div>
+              <div class="menu-item" id="format-subsection">Subsection</div>
+              <div class="menu-item" id="format-subsubsection">Subsubsection</div>
+              <div class="menu-separator"></div>
               <div class="menu-item" id="format-blockquote">Block Quote</div>
               <div class="menu-item" id="format-code-block">Code Block</div>
               <div class="menu-item" id="format-hr">Horizontal Rule</div>
-              <div class="menu-item has-submenu">
-                Headings
-                <div class="submenu">
-                  <div class="menu-item" id="format-h1">Heading 1</div>
-                  <div class="menu-item" id="format-h2">Heading 2</div>
-                  <div class="menu-item" id="format-h3">Heading 3</div>
-                  <div class="menu-item" id="format-h4">Heading 4</div>
-                  <div class="menu-item" id="format-h5">Heading 5</div>
-                  <div class="menu-item" id="format-h6">Heading 6</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -112,12 +105,22 @@ document.querySelector("#format-paragraph")?.addEventListener("click", () => {
   view.focus();
 });
 
-for (let level = 1; level <= 6; level++) {
-  document.querySelector(`#format-h${level}`)?.addEventListener("click", () => {
-    Editor.setHeading(view, level);
+document.querySelector("#format-section")?.addEventListener("click", () => {
+  Editor.setSection(view, 1);
+  view.focus();
+});
+
+document.querySelector("#format-subsection")?.addEventListener("click", () => {
+  Editor.setSection(view, 2);
+  view.focus();
+});
+
+document
+  .querySelector("#format-subsubsection")
+  ?.addEventListener("click", () => {
+    Editor.setSection(view, 3);
     view.focus();
   });
-}
 
 document.querySelector("#format-code-block")?.addEventListener("click", () => {
   Editor.setCodeBlock(view);

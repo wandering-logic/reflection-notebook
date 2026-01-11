@@ -73,8 +73,8 @@ export function setParagraph(view: EditorView): boolean {
   return setBlockType(schema.nodes.paragraph)(view.state, view.dispatch);
 }
 
-export function setHeading(view: EditorView, level: number): boolean {
-  return setBlockType(schema.nodes.heading, { level })(
+export function setSection(view: EditorView, level: number): boolean {
+  return setBlockType(schema.nodes.section, { level })(
     view.state,
     view.dispatch,
   );
