@@ -104,5 +104,5 @@ symlink to something like `~/.local/share/claude/versions/x.y.z`
 npm install -g @openai/codex
 ```
 
-That will install codex in ~/.nvm/node/Vx.y.z/bin/codex.  The install of nvm
-above should have modified your .bashrc to put that on your path.
+That will install codex in `~/.nvm/node/Vx.y.z/bin/codex`.  The install of `nvm`
+above should have modified your `.bashrc` to put that on your path.
