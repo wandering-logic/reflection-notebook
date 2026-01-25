@@ -6,7 +6,7 @@ import {
 } from "prosemirror-commands";
 import { history, redo, undo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
-import { Node } from "prosemirror-model";
+import { Fragment, Node, Slice } from "prosemirror-model";
 import {
   EditorState,
   Plugin,
@@ -149,6 +149,11 @@ export function mountEditor(host: HTMLElement): EditorView {
   const view = new EditorView(host, {
     state,
     dispatchTransaction(tr) {
+      if (tr.getMeta("uiEvent") === "paste") {
+        console.log("Paste transaction steps:", tr.steps);
+        console.log("Doc before:", tr.before.toString());
+        console.log("Doc after:", tr.doc.toString());
+      }
       const newState = view.state.apply(tr);
       view.updateState(newState);
 
@@ -156,6 +161,94 @@ export function mountEditor(host: HTMLElement): EditorView {
         const listener = changeListeners.get(view);
         if (listener) listener();
       }
+    },
+    transformPasted(slice) {
+      console.log("Pasted slice:", slice.content.toString());
+      console.log("Slice nodes:", slice.content);
+      return slice;
+    },
+    handlePaste(view, _event, slice) {
+      // Check if slice contains block-level nodes
+      let hasBlockContent = false;
+      slice.content.forEach((node) => {
+        if (node.isBlock) hasBlockContent = true;
+      });
+
+      if (!hasBlockContent) {
+        return false; // Inline content - use default handling
+      }
+
+      const { state, dispatch } = view;
+      const { $from } = state.selection;
+      const docIndex = $from.index(0);
+
+      // Pasting into title or subtitle - extract inline content only
+      if (docIndex < 2) {
+        // Collect all inline content from pasted blocks
+        const inlineNodes: Node[] = [];
+        slice.content.forEach((node) => {
+          if (node.isBlock) {
+            // Extract inline content from blocks
+            node.content.forEach((child) => {
+              inlineNodes.push(child);
+            });
+          } else {
+            inlineNodes.push(node);
+          }
+        });
+
+        if (inlineNodes.length === 0) {
+          return false;
+        }
+
+        const tr = state.tr;
+        tr.replaceSelection(new Slice(Fragment.from(inlineNodes), 0, 0));
+        dispatch(tr);
+        return true;
+      }
+
+      // In created node - don't allow paste
+      if (docIndex === 2) {
+        return true; // Consume the event but do nothing
+      }
+
+      // Pasting into body - transform title/subtitle nodes to section level 1
+      const transformedNodes: Node[] = [];
+      slice.content.forEach((node) => {
+        if (node.type.name === "title" || node.type.name === "subtitle") {
+          // Convert to section level 1, preserving inline content
+          transformedNodes.push(
+            schema.nodes.section.create({ level: 1 }, node.content),
+          );
+        } else {
+          transformedNodes.push(node);
+        }
+      });
+
+      // Only handle collapsed selection for now
+      if (!state.selection.empty) {
+        return false;
+      }
+
+      const tr = state.tr;
+      const currentBlock = $from.node(1);
+      const beforeBlock = $from.before(1);
+      const afterBlock = $from.after(1);
+
+      if (currentBlock.content.size === 0) {
+        // Empty block - replace it with pasted content
+        tr.replaceWith(beforeBlock, afterBlock, transformedNodes);
+      } else {
+        // Non-empty block - insert pasted content after it
+        tr.insert(afterBlock, transformedNodes);
+      }
+
+      // Move cursor to end of inserted content
+      const insertEnd = tr.mapping.map(afterBlock);
+      tr.setSelection(Selection.near(tr.doc.resolve(insertEnd)));
+
+      dispatch(tr);
+      return true;
     },
   });
   return view;

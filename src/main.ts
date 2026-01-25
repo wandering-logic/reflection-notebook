@@ -51,6 +51,7 @@ app.innerHTML = `
               <div class="menu-item" id="format-section">Section</div>
               <div class="menu-item" id="format-subsection">Subsection</div>
               <div class="menu-item" id="format-subsubsection">Subsubsection</div>
+              <div class="menu-item" id="format-subsubsubsection">Subsubsubsection</div>
               <div class="menu-separator"></div>
               <div class="menu-item" id="format-blockquote">Block Quote</div>
               <div class="menu-item" id="format-code-block">Code Block</div>
@@ -119,6 +120,13 @@ document
   .querySelector("#format-subsubsection")
   ?.addEventListener("click", () => {
     Editor.setSection(view, 3);
+    view.focus();
+  });
+
+document
+  .querySelector("#format-subsubsubsection")
+  ?.addEventListener("click", () => {
+    Editor.setSection(view, 4);
     view.focus();
   });
 
