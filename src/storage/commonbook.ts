@@ -116,15 +116,59 @@ export async function createCommonbook(
   return { commonbook, entry };
 }
 
+export interface RestoreResult {
+  commonbook: Commonbook;
+  needsPermission: boolean;
+}
+
 /**
  * Try to restore last-used commonbook from persisted handle.
- * Returns null if no persisted handle or permission denied.
+ * Returns null if no persisted handle.
+ * Returns { commonbook, needsPermission: true } if permission is needed.
  */
 export async function restoreCommonbook(
   fs: FileSystemProvider,
+): Promise<RestoreResult | null> {
+  const result = await fs.getPersistedHandle(HANDLE_STORAGE_KEY);
+  if (!result) return null;
+
+  const { handle, needsPermission } = result;
+
+  // If we need permission, we can't read the meta yet - return partial info
+  if (needsPermission) {
+    return {
+      commonbook: {
+        handle,
+        meta: { version: COMMONBOOK_VERSION, lastOpenedEntry: null },
+        name: handle.name,
+      },
+      needsPermission: true,
+    };
+  }
+
+  const meta = await readCommonbookMeta(fs, handle);
+  if (!meta) return null;
+
+  return {
+    commonbook: {
+      handle,
+      meta,
+      name: handle.name,
+    },
+    needsPermission: false,
+  };
+}
+
+/**
+ * Request permission for a commonbook handle and load its metadata.
+ * Call this after user grants permission via a gesture.
+ */
+export async function reconnectCommonbook(
+  fs: FileSystemProvider,
+  handle: FileSystemDirectoryHandle,
 ): Promise<Commonbook | null> {
-  const handle = await fs.getPersistedHandle(HANDLE_STORAGE_KEY);
-  if (!handle) return null;
+  const granted = await fs.requestPermission(handle);
+  if (!granted) return null;
 
   const meta = await readCommonbookMeta(fs, handle);
   if (!meta) return null;

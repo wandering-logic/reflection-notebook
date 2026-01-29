@@ -34,8 +34,16 @@ export interface FileSystemProvider {
   /** Store handle in IndexedDB for persistence across sessions */
   persistHandle(key: string, handle: FileSystemDirectoryHandle): Promise<void>;
 
-  /** Retrieve persisted handle (returns null if not found or permission denied) */
-  getPersistedHandle(key: string): Promise<FileSystemDirectoryHandle | null>;
+  /** Retrieve persisted handle without requesting permission */
+  getPersistedHandle(
+    key: string,
+  ): Promise<{
+    handle: FileSystemDirectoryHandle;
+    needsPermission: boolean;
+  } | null>;
+
+  /** Request permission on a handle (requires user gesture) */
+  requestPermission(handle: FileSystemDirectoryHandle): Promise<boolean>;
 }
 
 /**
@@ -146,7 +154,10 @@ export class LocalFileSystemProvider implements FileSystemProvider {
 
   async getPersistedHandle(
     key: string,
-  ): Promise<FileSystemDirectoryHandle | null> {
+  ): Promise<{
+    handle: FileSystemDirectoryHandle;
+    needsPermission: boolean;
+  } | null> {
     const db = await this.openDB();
     const handle = await new Promise<FileSystemDirectoryHandle | undefined>(
       (resolve, reject) => {
@@ -160,21 +171,25 @@ export class LocalFileSystemProvider implements FileSystemProvider {
 
     if (!handle) return null;
 
-    // Verify we still have permission (File System Access API extensions)
+    // Check if we already have permission
     // @ts-expect-error - queryPermission is not in TS lib yet
     const permission = await handle.queryPermission({ mode: "readwrite" });
     if (permission === "granted") {
-      return handle;
+      return { handle, needsPermission: false };
     }
 
-    // Try to request permission
-    // @ts-expect-error - requestPermission is not in TS lib yet
-    const requested = await handle.requestPermission({ mode: "readwrite" });
-    if (requested === "granted") {
-      return handle;
-    }
+    // We have the handle but need permission (requires user gesture)
+    return { handle, needsPermission: true };
+  }
 
-    return null;
+  async requestPermission(handle: FileSystemDirectoryHandle): Promise<boolean> {
+    try {
+      // @ts-expect-error - requestPermission is not in TS lib yet
+      const result = await handle.requestPermission({ mode: "readwrite" });
+      return result === "granted";
+    } catch {
+      return false;
+    }
   }
 
   // Helper: navigate to a file handle at a path

@@ -245,3 +245,7 @@ body {
 .welcome-buttons button:first-child:hover {
   background: #0056b3;
 }
+.reconnect-hint {
+  font-size: 0.85em;
+  color: #888;
+}

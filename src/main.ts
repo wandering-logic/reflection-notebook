@@ -5,6 +5,7 @@ import {
   type Commonbook,
   createCommonbook,
   openCommonbook,
+  reconnectCommonbook,
   restoreCommonbook,
   saveCommonbookMeta,
 } from "./storage/commonbook";
@@ -24,6 +25,7 @@ const fs = new LocalFileSystemProvider();
 // Current state
 let currentCommonbook: Commonbook | null = null;
 let currentEntry: Entry | null = null;
+let pendingReconnectHandle: FileSystemDirectoryHandle | null = null;
 
 function updateTitle() {
   if (!currentCommonbook) {
@@ -111,6 +113,18 @@ app.innerHTML = `
       <div class="welcome-buttons">
         <button id="welcome-new">New Commonbook</button>
         <button id="welcome-open">Open Commonbook</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-dialog hidden" id="reconnect-dialog">
+    <div class="welcome-content">
+      <h1>Reconnect to Commonbook</h1>
+      <p>Click below to reconnect to <strong id="reconnect-name"></strong>.</p>
+      <p class="reconnect-hint">Install as an app to skip this step in the future.</p>
+      <div class="welcome-buttons">
+        <button id="reconnect-button">Reconnect</button>
+        <button id="reconnect-different">Open Different Commonbook</button>
       </div>
     </div>
   </div>
@@ -378,12 +392,88 @@ document
   .querySelector("#welcome-open")
   ?.addEventListener("click", handleOpenCommonbook);
 
+// Reconnect dialog handlers
+document
+  .querySelector("#reconnect-button")
+  ?.addEventListener("click", handleReconnect);
+document
+  .querySelector("#reconnect-different")
+  ?.addEventListener("click", handleReconnectDifferent);
+
 function showWelcomeDialog() {
   document.querySelector("#welcome-dialog")?.classList.remove("hidden");
 }
 
 function hideWelcomeDialog() {
   document.querySelector("#welcome-dialog")?.classList.add("hidden");
+}
+
+function showReconnectDialog(name: string) {
+  const nameEl = document.querySelector("#reconnect-name");
+  if (nameEl) nameEl.textContent = name;
+  document.querySelector("#reconnect-dialog")?.classList.remove("hidden");
+}
+
+function hideReconnectDialog() {
+  document.querySelector("#reconnect-dialog")?.classList.add("hidden");
+}
+
+async function handleReconnect() {
+  if (!pendingReconnectHandle) return;
+
+  try {
+    const commonbook = await reconnectCommonbook(fs, pendingReconnectHandle);
+    if (!commonbook) {
+      alert(
+        "Permission denied. Please try again or open a different commonbook.",
+      );
+      return;
+    }
+
+    pendingReconnectHandle = null;
+    currentCommonbook = commonbook;
+
+    // Load last opened entry, or create a new one
+    if (commonbook.meta.lastOpenedEntry) {
+      try {
+        const entry = await loadEntry(
+          fs,
+          commonbook,
+          commonbook.meta.lastOpenedEntry,
+        );
+        currentEntry = entry;
+        Editor.setContent(view, entry.content);
+      } catch {
+        // Last entry doesn't exist, create a new one
+        const entry = await createEntry(fs, commonbook);
+        currentEntry = entry;
+        commonbook.meta.lastOpenedEntry = entry.path;
+        await saveCommonbookMeta(fs, commonbook);
+        Editor.setContent(view, entry.content);
+      }
+    } else {
+      // No last entry, create a new one
+      const entry = await createEntry(fs, commonbook);
+      currentEntry = entry;
+      commonbook.meta.lastOpenedEntry = entry.path;
+      await saveCommonbookMeta(fs, commonbook);
+      Editor.setContent(view, entry.content);
+    }
+
+    updateTitle();
+    hideReconnectDialog();
+    view.focus();
+  } catch (e) {
+    if (e instanceof Error) {
+      alert(e.message);
+    }
+  }
+}
+
+async function handleReconnectDifferent() {
+  pendingReconnectHandle = null;
+  hideReconnectDialog();
+  await handleOpenCommonbook();
 }
 
 // Autosave: save after changes, debounced
@@ -421,9 +511,20 @@ updateFormatIndicator();
 
 // Startup: try to restore previous commonbook
 async function startup() {
-  const commonbook = await restoreCommonbook(fs);
+  const result = await restoreCommonbook(fs);
 
-  if (commonbook) {
+  if (result) {
+    const { commonbook, needsPermission } = result;
+
+    // If permission is needed, show reconnect dialog
+    if (needsPermission) {
+      pendingReconnectHandle = commonbook.handle;
+      showReconnectDialog(commonbook.name);
+      updateTitle();
+      return;
+    }
+
+    // Permission granted - load normally
     currentCommonbook = commonbook;
 
     // Load last opened entry
