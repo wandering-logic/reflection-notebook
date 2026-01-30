@@ -3,11 +3,78 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Notebook</title>
+    <title>Reflection Notebook</title>
+    <meta
+      name="description"
+      content="Reflection Notebook is a local-first writing space built on ProseMirror."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600&family=Source+Sans+3:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/landing.css" />
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <main>
+      <section class="hero">
+        <div>
+          <span class="badge">Reflection Notebook</span>
+          <h1>A quiet place to think in public or in private.</h1>
+          <p class="lead">
+            Reflection Notebook is a focused writing tool built on ProseMirror. It
+            keeps the interface calm, stores your notes locally, and treats every
+            page as a living document you can return to.
+          </p>
+          <div class="cta">
+            <a class="primary" href="/app/">Open the app</a>
+            <a href="https://github.com/wandering-logic/reflection-notebook">
+              View the repository
+            </a>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Guiding principles</h2>
+          <ul>
+            <li>Local-first by default, no account wall.</li>
+            <li>Less chrome, more words.</li>
+            <li>Structure that grows with your thinking.</li>
+            <li>Export-friendly and portable.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section">
+        <article class="card">
+          <h2>How it works</h2>
+          <p>
+            The editor leans on ProseMirror for reliable document structure and
+            keyboard-driven editing. Notes are stored in browser storage so you
+            can work offline and keep your writing close.
+          </p>
+        </article>
+        <article class="card">
+          <h2>Philosophy</h2>
+          <p>
+            Reflection Notebook is designed for deliberate thinking. It favors
+            calm surfaces, gentle constraints, and patterns that encourage
+            returning to a page rather than abandoning it.
+          </p>
+        </article>
+        <article class="card">
+          <h2>Docs & roadmap</h2>
+          <p>
+            The documentation lives in the repository for now. PWA support and
+            sync options are on the horizon once the core writing experience
+            feels settled.
+          </p>
+        </article>
+      </section>
+
+      <footer>
+        Built by Wandering Logic. Questions or ideas? Open an issue on GitHub.
+      </footer>
+    </main>
   </body>
 </html>
-
