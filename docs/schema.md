@@ -12,6 +12,75 @@ doc: title subtitle created block+
 
 Every document has exactly one title, one subtitle, one created timestamp, followed by one or more blocks.
 
+## Structural Grammar
+
+The schema defines a context-free grammar. This section presents the production rules that determine what can contain what.
+
+### Current Grammar
+
+```
+Document       <- Title Subtitle Created Block+
+
+Block          <- LeafBlock | ContainerBlock
+
+LeafBlock      <- Paragraph | Section | CodeBlock | HorizontalRule
+ContainerBlock <- Blockquote
+
+Paragraph      <- Inline*
+Section        <- Inline*                    ; level ∈ {1,2,3,4}
+CodeBlock      <- Text*                      ; marks forbidden
+HorizontalRule <- ε                          ; atomic
+
+Blockquote     <- Block+                     ; recursive
+
+Inline         <- Text
+Text           <- (char, Mark*)*
+
+Mark           <- Strong | Em | Code | Link | Strikethrough
+```
+
+### Structural Gaps (vs CommonMark)
+
+**1. Document has a fixed prefix**
+
+CommonMark: `Document <- Block*`
+This schema: `Document <- Title Subtitle Created Block+`
+
+The fixed prefix is intentional (app-specific metadata), but it means documents cannot start with arbitrary content.
+
+**2. Lists are missing**
+
+No recursive nesting structure exists beyond blockquotes. Lists enable the primary nesting pattern in CommonMark:
+
+```
+; CommonMark structure (missing):
+ContainerBlock <- Blockquote | BulletList | OrderedList
+
+BulletList     <- ListItem+
+OrderedList    <- ListItem+                  ; start attr
+ListItem       <- Block+                     ; enables arbitrary nesting
+```
+
+Without lists, users cannot create nested outlines or hierarchical content.
+
+**3. Inline nodes are impoverished**
+
+Only `Text` exists as an inline node. CommonMark has:
+
+```
+; CommonMark inline nodes (partially missing):
+Inline <- Text | Image | HardBreak | SoftBreak
+
+Image     <- ε                               ; atomic, with src/alt/title attrs
+HardBreak <- ε                               ; atomic, explicit line break
+```
+
+The schema uses marks for emphasis/strong/code/link, which is a valid ProseMirror pattern but structurally different from CommonMark's inline span model.
+
+**4. No tight/loose list distinction**
+
+CommonMark distinguishes "tight" lists (no blank lines between items, rendered without `<p>` wrappers) from "loose" lists. This requires list support first.
+
 ## Nodes
 
 ### App-Specific Nodes
