@@ -19,6 +19,8 @@ import { schema } from "./schema";
 const markKeymap = keymap({
   "Mod-b": toggleMark(schema.marks.strong),
   "Mod-i": toggleMark(schema.marks.em),
+  "Mod-`": toggleMark(schema.marks.code),
+  "Mod-Shift-`": toggleMark(schema.marks.strikethrough),
 });
 
 // Tab navigation between title, subtitle, and first block
