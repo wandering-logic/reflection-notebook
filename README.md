@@ -9,7 +9,7 @@ The motivation is that I want something that is similarly functional to the
 OneNote PWA, but with better math support, an open file format, and excellent
 export of static html (for publication on (for example) a blog).
 
-The (ProseMirror toolkit)[https://prosemirror.net/] is doing almost all the
+The [ProseMirror toolkit](https://prosemirror.net/) is doing almost all the
 heavy lifting here.  It's truly a wonderful library.
 
 The file format will is: each note is a subdirectory containing a ProseMirror
